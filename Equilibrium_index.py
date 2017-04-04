@@ -20,13 +20,31 @@ def trivial(data):
             yield index
 
 
-#class Equilibrium(unittest.TestCase):
-data = [-7, 1, 5, 2, -4, 3, 0]
-# data = [1, -1, 0]
+class Equilibrium(unittest.TestCase):
+
+    # (input, expected)
+    test_data = (
+        ([], [None]), ([1], [0]), ([1, -1, 0], [2], ([-7, 1, 5, 2, -4, 3, 0], [3, 6]))
+    )
+
+    @staticmethod
+    def trivial_run(data):
+        result = []
+        for index in trivial(data):
+            result.append(index)
+        return result
+
+    def test_trivial(self):
+        for test in self.test_data:
+            self.assertEqual(self.trivial_run(test[0]), test[1])
 
 if __name__ == '__main__':
-    for result in trivial(data):
-        print result
+    unittest.main()
+
+
+
+
+
 
 
 
