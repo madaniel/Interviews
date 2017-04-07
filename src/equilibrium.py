@@ -7,6 +7,7 @@ The functions should return the indexes which the sum from its left equals to it
 def solution_1_generator(data):
     """
     Using sum function for each index on iteration
+    Running time Complexity: O(n**2)
     
     :param data: list of numbers to check 
     :return: list of indexes found 
@@ -30,6 +31,7 @@ def solution_1_generator(data):
 def solution_2_generator(data):
     """
     Without using sum function
+    Running time Complexity: O(n)
     
     :param data: list of numbers to check
     :return: list of indexes found

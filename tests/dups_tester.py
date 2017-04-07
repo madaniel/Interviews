@@ -1,13 +1,14 @@
 import unittest
-from src.Equilibrium import solution_1, solution_2
+from src.find_duplicates import solution_1, solution_2, solution_3
 
 
-class Equilibrium(unittest.TestCase):
+class FindDuplicates(unittest.TestCase):
 
     # (input, expected)
     test_data = (
-        ([], [None]), ([1], [0]), ([1, -1, 0], [2]), ([-7, 1, 5, 2, -4, 3, 0], [3, 6]),
-        ([-14, 2, 10, 4, -8, 6, 0, 14, -2, -10, -4, 8, -6], [3, 6, 10])
+        ([4, 3, 2, 7, 8, 2, 3, 1], [2, 3]),
+        ([1, 4, 3, 2, 7, 8, 2, 3, 3, 1], [1, 2, 3]),
+
     )
 
     def test_solution_1(self):
@@ -17,6 +18,10 @@ class Equilibrium(unittest.TestCase):
     def test_solution_2(self):
         for test in self.test_data:
             self.assertEqual(solution_2(test[0]), test[1])
+
+    def test_solution_3(self):
+        for test in self.test_data:
+            self.assertEqual(solution_3(test[0]), test[1])
 
 if __name__ == '__main__':
     unittest.main()
