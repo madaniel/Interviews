@@ -23,5 +23,6 @@ class FindDuplicates(unittest.TestCase):
         for test in self.test_data:
             self.assertEqual(solution_3(test[0]), test[1])
 
+
 if __name__ == '__main__':
     unittest.main()
