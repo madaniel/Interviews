@@ -7,9 +7,9 @@ Write additional class which inherit the abstract class with your implementation
 
 Requirements:
 
+- The stack will accept only int numbers.
 - The stack should created with capacity > 0.
-- The stack cannot exceed its own capacity.
-- The stack should return True if push succeeded or False if it failed.
+- The stack should not exceed its own capacity.
 
 
 Step 2:
@@ -30,24 +30,24 @@ class MetaBasicStack(object):
     @abstractmethod
     def push(self, item):
         """
-        Add new item after the last one in stack
-        :return: None
+        Add new number after the last one in stack
+        :return: True if succeeded or False if failed
         """
         pass
 
     @abstractmethod
     def pop(self):
         """
-        Return and remove last item from stack
-        :return: item
+        Return and remove last number from stack
+        :return: number if succeeded or False if failed
         """
         pass
 
     @abstractmethod
     def peak(self):
         """
-        Return the last added item from stack
-        :return: None
+        Return the last added number from stack
+        :return: number
         """
         pass
 
@@ -67,6 +67,14 @@ class MetaBasicStack(object):
         """
         pass
 
+    @abstractmethod
+    def get_minimum(self):
+        """
+        Return the minimum value in Stack
+        :return: number or None
+        """
+        pass
+
 
 class BasicStack(MetaBasicStack):
     """
@@ -78,15 +86,20 @@ class BasicStack(MetaBasicStack):
         self.capacity = capacity
         self.itemList = []
 
-    def push(self, item):
+    def push(self, number):
+        isinstance(number, int)
+
         if not self.is_full():
-            self.itemList.append(item)
+            self.itemList.append(number)
             return True
 
         return False
 
     def pop(self):
-        return self.itemList.pop()
+        if self.itemList:
+            return self.itemList.pop()
+
+        return False
 
     def peak(self):
         return self.itemList[0]
@@ -96,6 +109,12 @@ class BasicStack(MetaBasicStack):
 
     def is_empty(self):
         return not self.itemList
+
+    def get_minimum(self):
+        if self.itemList:
+            return min(self.itemList)
+
+        return None
 
 
 class BasicStackTester(object):
@@ -122,6 +141,7 @@ class BasicStackTester(object):
         assert test_stack.push(1)
         assert test_stack.pop() == 1
         assert test_stack.is_empty()
+        assert not test_stack.pop()
 
     @staticmethod
     def test_3():
@@ -163,6 +183,25 @@ class BasicStackTester(object):
         else:
             assert False
 
+    @staticmethod
+    def test_7():
+        # get_minimum() verification
+        test_stack = BasicStack(capacity=3)
+        # No minimum when stack is empty
+        assert not test_stack.get_minimum()
+        assert test_stack.push(2)
+        assert test_stack.get_minimum() == 2
+        assert test_stack.push(3)
+        assert test_stack.get_minimum() == 2
+        assert test_stack.push(1)
+        assert test_stack.get_minimum() == 1
+        test_stack.pop()
+        assert test_stack.get_minimum() == 2
+        test_stack.pop()
+        assert test_stack.get_minimum() == 2
+        test_stack.pop()
+        assert not test_stack.get_minimum()
+
 
 if __name__ == '__main__':
     BasicStackTester.test_1()
@@ -171,4 +210,5 @@ if __name__ == '__main__':
     BasicStackTester.test_4()
     BasicStackTester.test_5()
     BasicStackTester.test_6()
+    BasicStackTester.test_7()
 
