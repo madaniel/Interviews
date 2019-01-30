@@ -68,9 +68,25 @@ class MetaBasicStack(object):
         pass
 
     @abstractmethod
+    def get_size(self):
+        """
+        Return the count of the numbers in the stack
+        :return: number or None
+        """
+        pass
+
+    @abstractmethod
     def get_minimum(self):
         """
         Return the minimum value in Stack
+        :return: number or None
+        """
+        pass
+
+    @abstractmethod
+    def get_second_minimum(self):
+        """
+        Return the next smallest number after the minimum
         :return: number or None
         """
         pass
@@ -96,7 +112,7 @@ class BasicStack(MetaBasicStack):
         return False
 
     def pop(self):
-        if self.itemList:
+        if not self.is_empty():
             return self.itemList.pop()
 
         return False
@@ -105,16 +121,44 @@ class BasicStack(MetaBasicStack):
         return self.itemList[0]
 
     def is_full(self):
-        return len(self.itemList) == self.capacity
+        return self.get_size() == self.capacity
 
     def is_empty(self):
         return not self.itemList
 
-    def get_minimum(self):
-        if self.itemList:
-            return min(self.itemList)
+    def get_size(self):
+        return len(self.itemList)
 
-        return None
+    def get_minimum(self):
+        if self.is_empty():
+            return None
+
+        min_number = None
+
+        for number in self.itemList:
+
+            if number < min_number or min_number is None:
+                min_number = number
+
+        return min_number
+
+    def get_second_minimum(self):
+        if self.get_size() < 2:
+            return None
+
+        first_min = None
+        second_min = None
+
+        for number in self.itemList:
+
+            if number < first_min or first_min is None:
+                second_min = first_min
+                first_min = number
+
+            elif number < second_min or second_min is None:
+                second_min = number
+
+        return second_min
 
 
 class BasicStackTester(object):
@@ -185,6 +229,24 @@ class BasicStackTester(object):
 
     @staticmethod
     def test_7():
+        # get_size verification
+        test_stack = BasicStack(capacity=3)
+        assert test_stack.get_size() == 0
+        assert test_stack.push(3)
+        assert test_stack.get_size() == 1
+        assert test_stack.push(5)
+        assert test_stack.get_size() == 2
+        assert test_stack.push(9)
+        assert test_stack.get_size() == 3
+        assert test_stack.pop()
+        assert test_stack.get_size() == 2
+        assert test_stack.pop()
+        assert test_stack.get_size() == 1
+        assert test_stack.pop()
+        assert test_stack.get_size() == 0
+
+    @staticmethod
+    def test_8():
         # get_minimum() verification
         test_stack = BasicStack(capacity=3)
         # No minimum when stack is empty
@@ -195,12 +257,32 @@ class BasicStackTester(object):
         assert test_stack.get_minimum() == 2
         assert test_stack.push(1)
         assert test_stack.get_minimum() == 1
-        test_stack.pop()
+        assert test_stack.pop()
         assert test_stack.get_minimum() == 2
-        test_stack.pop()
+        assert test_stack.pop()
         assert test_stack.get_minimum() == 2
-        test_stack.pop()
+        assert test_stack.pop()
         assert not test_stack.get_minimum()
+
+    @staticmethod
+    def test_9():
+        # get_second_minimum() verification
+        test_stack = BasicStack(capacity=3)
+        # No second minimum when stack is empty
+        assert not test_stack.get_second_minimum()
+        assert test_stack.push(2)
+        # No second minimum when there's only one number
+        assert not test_stack.get_second_minimum()
+        assert test_stack.push(3)
+        assert test_stack.get_second_minimum() == 3
+        assert test_stack.push(1)
+        assert test_stack.get_second_minimum() == 2
+        test_stack.pop()
+        assert test_stack.get_second_minimum() == 3
+        test_stack.pop()
+        assert not test_stack.get_second_minimum()
+        test_stack.pop()
+        assert not test_stack.get_second_minimum()
 
 
 if __name__ == '__main__':
@@ -211,4 +293,5 @@ if __name__ == '__main__':
     BasicStackTester.test_5()
     BasicStackTester.test_6()
     BasicStackTester.test_7()
-
+    BasicStackTester.test_8()
+    BasicStackTester.test_9()
