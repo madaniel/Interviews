@@ -118,7 +118,7 @@ class BasicStack(MetaBasicStack):
         return False
 
     def peak(self):
-        return self.itemList[0]
+        return self.itemList[-1]
 
     def is_full(self):
         return self.get_size() == self.capacity
@@ -203,6 +203,10 @@ class BasicStackTester(object):
         assert test_stack.push(1)
         assert test_stack.peak() == 1
         assert not test_stack.is_empty()
+        assert test_stack.push(3)
+        assert test_stack.peak() == 3
+        assert test_stack.pop()
+        assert test_stack.peak() == 1
 
     @staticmethod
     def test_5():
