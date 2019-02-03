@@ -10,6 +10,7 @@ Requirements:
 - The stack will accept only int numbers.
 - The stack should created with capacity > 0.
 - The stack should not exceed its own capacity.
+- No need to consider complexity at this time.
 
 
 Step 2:
@@ -17,6 +18,18 @@ Step 2:
 Write tests to verify the functionality of the Stack.
 Try to refer to both positive and negative scenarios.
 Aim to achieve 100% coverage.
+
+
+Step 3:
+
+Add function get_minimum_fast() to Stack class.
+The method should be able to get the minimum number at time-complexity of O(1).
+
+
+Step 4:
+
+Run the tests you've wrote for get_minimum_fast() and make sure they all pass.
+
 
 """
 
@@ -94,28 +107,39 @@ class MetaBasicStack(object):
 
 class BasicStack(MetaBasicStack):
     """
-    Step 1 solution example
+    Step 1 + 3 solution example
     """
 
     def __init__(self, capacity):
         assert capacity > 0
         self.capacity = capacity
         self.itemList = []
+        # For get_minimum_fast()
+        self.minList = []
 
     def push(self, number):
         isinstance(number, int)
 
         if not self.is_full():
             self.itemList.append(number)
+
+            # For get_minimum_fast()
+            if not self.minList or number <= self.minList[-1]:
+                self.minList.append(number)
+
             return True
 
         return False
 
     def pop(self):
-        if not self.is_empty():
-            return self.itemList.pop()
+        if self.is_empty():
+            return False
 
-        return False
+        # For get_minimum_fast()
+        if self.itemList[-1] == self.minList[-1]:
+            self.minList.pop()
+
+        return self.itemList.pop()
 
     def peak(self):
         return self.itemList[-1]
@@ -160,10 +184,16 @@ class BasicStack(MetaBasicStack):
 
         return second_min
 
+    def get_minimum_fast(self):
+        if not self.minList:
+            return None
+
+        return self.minList[-1]
+
 
 class BasicStackTester(object):
     """
-    Step 2 solution example
+    Step 2 + 4 solution example
     """
 
     @staticmethod
@@ -288,6 +318,25 @@ class BasicStackTester(object):
         test_stack.pop()
         assert not test_stack.get_second_minimum()
 
+    @staticmethod
+    def test_10():
+        # get_minimum_fast() verification
+        test_stack = BasicStack(capacity=3)
+        # No minimum when stack is empty
+        assert not test_stack.get_minimum_fast()
+        assert test_stack.push(2)
+        assert test_stack.get_minimum_fast() == 2
+        assert test_stack.push(3)
+        assert test_stack.get_minimum_fast() == 2
+        assert test_stack.push(1)
+        assert test_stack.get_minimum_fast() == 1
+        assert test_stack.pop()
+        assert test_stack.get_minimum_fast() == 2
+        assert test_stack.pop()
+        assert test_stack.get_minimum_fast() == 2
+        assert test_stack.pop()
+        assert not test_stack.get_minimum_fast()
+
 
 if __name__ == '__main__':
     BasicStackTester.test_1()
@@ -299,3 +348,4 @@ if __name__ == '__main__':
     BasicStackTester.test_7()
     BasicStackTester.test_8()
     BasicStackTester.test_9()
+    BasicStackTester.test_10()
