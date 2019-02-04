@@ -23,7 +23,6 @@ Aim to achieve 100% coverage.
 Step 3:
 
 Add function get_minimum_fast() to Stack class.
-The method should be able to get the minimum number at time-complexity of O(1).
 
 
 Step 4:
@@ -46,7 +45,7 @@ class MetaBasicStack(object):
         Add new number after the last one in stack
         :return: True if succeeded or False if failed
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def pop(self):
@@ -54,7 +53,7 @@ class MetaBasicStack(object):
         Return and remove last number from stack
         :return: number if succeeded or False if failed
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def peak(self):
@@ -62,7 +61,7 @@ class MetaBasicStack(object):
         Return the last added number from stack
         :return: number
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def is_full(self):
@@ -70,7 +69,7 @@ class MetaBasicStack(object):
         Return True or False if the stack is full
         :return: True / False
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def is_empty(self):
@@ -78,7 +77,7 @@ class MetaBasicStack(object):
         Return True or False if the stack is empty
         :return: True / False
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_size(self):
@@ -86,7 +85,7 @@ class MetaBasicStack(object):
         Return the count of the numbers in the stack
         :return: number or None
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_minimum(self):
@@ -94,12 +93,20 @@ class MetaBasicStack(object):
         Return the minimum value in Stack
         :return: number or None
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_second_minimum(self):
         """
         Return the next smallest number after the minimum
+        :return: number or None
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_minimum_fast(self):
+        """
+        Return the minimum number at time-complexity of O(1)
         :return: number or None
         """
         pass
@@ -118,7 +125,7 @@ class BasicStack(MetaBasicStack):
         self.minList = []
 
     def push(self, number):
-        isinstance(number, int)
+        assert isinstance(number, int)
 
         if not self.is_full():
             self.itemList.append(number)
@@ -253,13 +260,22 @@ class BasicStackTester(object):
 
     @staticmethod
     def test_6():
-        # Requirement verification
+        # Requirement verifications
         try:
-            BasicStack(capacity=0)
+            test_stack = BasicStack(capacity=3)
+            test_stack.push("x")
         except AssertionError:
             pass
         else:
-            assert False
+            raise Exception("Stack cannot accept strings")
+
+        try:
+            BasicStack(capacity=0)
+
+        except AssertionError:
+            pass
+        else:
+            raise Exception("Stack cannot created with 0 capacity")
 
     @staticmethod
     def test_7():
@@ -349,3 +365,4 @@ if __name__ == '__main__':
     BasicStackTester.test_8()
     BasicStackTester.test_9()
     BasicStackTester.test_10()
+
