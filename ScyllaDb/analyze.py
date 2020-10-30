@@ -1,15 +1,14 @@
 
 import sys
-import math
 import random
 import subprocess
 from argparse import ArgumentParser
-from multiprocessing import Process, Manager
+from multiprocessing import Pool, Manager
 
 # Defines
 PERCENTILE = 0.95
-PROCESS_MIN_SECONDS = 2
-PROCESS_MAX_SECONDS = 2
+PROCESS_MIN_SECONDS = 5
+PROCESS_MAX_SECONDS = 5
 THROUGHPUT_INDEX = 1
 LATENCY_INDEX = 4
 
@@ -37,12 +36,12 @@ class Runner(object):
 
         self.process_amount = process_amount
 
-    def start_process(self, pid, data_dict, lock):
+    def start_process(self, args):
         """
         Starts a single process
         """
+        pid, data_dict, lock = args[:]
         seconds = random.randint(PROCESS_MIN_SECONDS, PROCESS_MAX_SECONDS)
-        print(f"<debug> pid={pid}, seconds={seconds}")
         command = ["python", "stress.py", str(seconds), str(pid)]
         stress_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
@@ -61,19 +60,25 @@ class Runner(object):
                 print(f"<debug> throughput={throughput} latency={latency} pid={pid}")
 
                 with lock:
-                    # update stats per process
                     latency_list = data_dict["latency_list"]
                     throughput_list = data_dict["throughput_list"]
                     latency_list.append(latency)
                     throughput_list.append(throughput)
+
+                    # update stats per process per latency and throughput
+                    latency_stats = data_dict["latency_stats"]
+                    latency_stats.update_stats(new_value=latency, data_list=latency_list)
+                    throughput_stats = data_dict["throughput_stats"]
+                    throughput_stats.update_stats(new_value=throughput, data_list=throughput_list)
+
                     data_dict["latency_list"] = latency_list
                     data_dict["throughput_list"] = throughput_list
                     data_dict["update_counter"] = data_dict.get("update_counter", 0) + 1
 
-            if data_dict["update_counter"] == self.process_amount:
-                # print stats
-                print("All completed !")
-                data_dict["update_counter"] = 0
+                # Print Statistics every cycle
+                if data_dict["update_counter"] == self.process_amount:
+                    data_dict["update_counter"] = 0
+                    print("Report")
 
     def run_stress_process(self):
         """
@@ -81,21 +86,15 @@ class Runner(object):
         """
         manager = Manager()
         shared_dict = manager.dict()
-        worker_list = []
         shared_dict["latency_list"] = []
         shared_dict["throughput_list"] = []
         shared_dict["update_counter"] = 0
+        shared_dict["latency_stats"] = Stats()
+        shared_dict["throughput_stats"] = Stats()
         shared_lock = manager.Lock()
 
-        for pid in range(self.process_amount):
-            process = Process(target=self.start_process, args=(pid, shared_dict, shared_lock))
-            worker_list.append(process)
-            process.start()
-
-        for worker in worker_list:
-            worker.join()
-
-        print(f"<debug> {str(shared_dict)}")
+        with Pool(self.process_amount) as process:
+            process.map(self.start_process, [(pid, shared_dict, shared_lock) for pid in range(self.process_amount)])
 
 
 class Stats(object):
@@ -105,19 +104,18 @@ class Stats(object):
     """
 
     def __init__(self):
-        self.min = math.inf
-        self.max = -1
+        self.min = None
+        self.max = None
         self.sum = 0
         self.count = 0
         self.percentile = None
-        self._average = None
 
     @property
     def average(self) -> float:
         """
         Calculates average of values
         """
-        return self.sum / self.count
+        return (self.sum / self.count) if self.count > 0 else None
 
     def _update_percentile(self, data_list: list, percentile: float):
         """
@@ -127,7 +125,7 @@ class Stats(object):
         size = len(data_list)
         sorted(data_list)
         index_of_percentile = int(round(size * percentile)) - 1
-        assert 0 < index_of_percentile < len(data_list), f"index {index_of_percentile} is out of range of data_list {data_list}"
+        assert 0 <= index_of_percentile <= len(data_list), f"index {index_of_percentile} is out of range of data_list {data_list}"
 
         self.percentile = data_list[index_of_percentile]
 
@@ -135,10 +133,10 @@ class Stats(object):
         """
         Update all statistics values per new value
         """
-        if new_value < self.min:
+        if self.min is None or new_value < self.min:
             self.min = new_value
 
-        if new_value > self.max:
+        if self.max is None or new_value > self.max:
             self.max = new_value
 
         self.sum += new_value
