@@ -36,14 +36,13 @@ class Runner(object):
 
         self.process_amount = process_amount
 
-    @staticmethod
-    def start_process(pid, data_dict, lock):
+    def start_process(self, pid, data_dict, lock):
         """
         Starts a single process
         """
         seconds = random.randint(PROCESS_MIN_SECONDS, PROCESS_MAX_SECONDS)
         print(f"<debug> pid={pid}, seconds={seconds}")
-        command = ["python", "stress.py", str(seconds)]
+        command = ["python", "stress.py", str(seconds), str(pid)]
         stress_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
         while True:
@@ -55,9 +54,10 @@ class Runner(object):
             if realtime_output:
                 realtime_output = realtime_output.decode('ascii')
                 realtime_output_list = realtime_output.split()
+                pid = int(realtime_output_list[-1])
                 throughput = int(realtime_output_list[THROUGHPUT_INDEX])
                 latency = int(realtime_output_list[LATENCY_INDEX])
-                print(f"<debug> throughput={throughput} latency={latency}")
+                print(f"<debug> throughput={throughput} latency={latency} pid={pid}")
 
                 with lock:
                     latency_list = data_dict["latency_list"]
@@ -66,6 +66,12 @@ class Runner(object):
                     throughput_list.append(throughput)
                     data_dict["latency_list"] = latency_list
                     data_dict["throughput_list"] = throughput_list
+                    data_dict["update_counter"] = data_dict.get("update_counter", 0) + 1
+                    pass
+
+            if data_dict["update_counter"] == self.process_amount:
+                print("All completed !")
+                data_dict["update_counter"] = 0
 
     def run_stress_process(self):
         """
@@ -76,6 +82,7 @@ class Runner(object):
         worker_list = []
         shared_dict["latency_list"] = []
         shared_dict["throughput_list"] = []
+        shared_dict["update_counter"] = 0
         shared_lock = manager.Lock()
 
         for pid in range(self.process_amount):

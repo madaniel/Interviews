@@ -14,6 +14,7 @@ class StressProcess(object):
     """
     def __init__(self):
         self.stress_time = None
+        self.pid = None
 
     def get_stress_time(self):
         """
@@ -21,8 +22,10 @@ class StressProcess(object):
         """
         parser = ArgumentParser(description="Stress time for process")
         parser.add_argument("StressTime", metavar="stress_time", type=int, help="Stress time in seconds")
+        parser.add_argument("PID", metavar="pid", type=int, help="PID_HELP")
         args = parser.parse_args()
         stress_time = args.StressTime
+        self.pid = args.PID
 
         if stress_time < 1:
             print("1 is the minimum value for stress_time")
@@ -39,7 +42,7 @@ class StressProcess(object):
         while stress_time > 0:
             throughput = random.randint(0, 100000)
             latency = random.randint(0, 20000)
-            print(f"Throughput: {throughput} ops Latency: {latency} ms")
+            print(f"Throughput: {throughput} ops Latency: {latency} ms pid: {self.pid}")
             time.sleep(1)
             stress_time -= 1
 
