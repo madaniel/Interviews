@@ -3,7 +3,7 @@ import sys
 import random
 import subprocess
 from argparse import ArgumentParser
-from multiprocessing import Pool, Manager, cpu_count
+from multiprocessing import Pool, Manager
 
 # Defines
 PERCENTILE = 0.95
@@ -37,55 +37,57 @@ class Runner(object):
 
         self.process_amount = process_amount
 
-    def start_process(self, args):
+    @staticmethod
+    def start_process(args):
         """
         Starts a single process
         """
         pid, data_dict, lock = args[:]
         seconds = random.randint(PROCESS_MIN_SECONDS, PROCESS_MAX_SECONDS)
         command = ["python", "stress.py", str(seconds)]
-        stress_process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
-        while True:
-            realtime_output = stress_process.stdout.readline()
+        with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE) as stress_process:
 
-            if realtime_output == b'' and stress_process.poll() is not None:
-                break
+            while True:
+                realtime_output = stress_process.stdout.readline()
 
-            if realtime_output:
-                realtime_output = realtime_output.decode('ascii')
-                realtime_output_list = realtime_output.split()
-                throughput = int(realtime_output_list[THROUGHPUT_INDEX])
-                latency = int(realtime_output_list[LATENCY_INDEX])
-                if DEBUG:
-                    print(f"<debug> throughput={throughput} latency={latency}")
+                # No more prints from stress process
+                if realtime_output == b'' and stress_process.poll() is not None:
+                    break
 
-                with lock:
-                    latency_list = data_dict["latency_list"]
-                    throughput_list = data_dict["throughput_list"]
-                    latency_list.append(latency)
-                    throughput_list.append(throughput)
+                if realtime_output:
+                    # Remove 'b prefix
+                    realtime_output = realtime_output.decode('ascii')
+                    # Print stress process output to console
+                    sys.stdout.write(f"pid={pid} {realtime_output}") if DEBUG else None
+                    # Purge buffer to enable prints
+                    sys.stdout.flush()
+                    # Break the output into list
+                    realtime_output_list = realtime_output.split()
+                    throughput = int(realtime_output_list[THROUGHPUT_INDEX])
+                    latency = int(realtime_output_list[LATENCY_INDEX])
 
-                    # update stats per process per latency and throughput
-                    latency_stats = data_dict["latency_stats"]
-                    latency_stats.update_stats(new_value=latency, data_list=latency_list)
-                    throughput_stats = data_dict["throughput_stats"]
-                    throughput_stats.update_stats(new_value=throughput, data_list=throughput_list)
-                    data_dict["latency_stats"] = latency_stats
-                    data_dict["throughput_stats"] = throughput_stats
+                    # Prevent race between processes
+                    with lock:
+                        latency_list = data_dict["latency_list"]
+                        throughput_list = data_dict["throughput_list"]
+                        latency_list.append(latency)
+                        throughput_list.append(throughput)
 
-                    data_dict["latency_list"] = latency_list
-                    data_dict["throughput_list"] = throughput_list
-                    data_dict["update_counter"] = data_dict.get("update_counter", 0) + 1
+                        # update stats per process per latency and throughput
+                        latency_stats = data_dict["latency_stats"]
+                        latency_stats.update_stats(new_value=latency, data_list=latency_list)
+                        throughput_stats = data_dict["throughput_stats"]
+                        throughput_stats.update_stats(new_value=throughput, data_list=throughput_list)
+                        data_dict["latency_stats"] = latency_stats
+                        data_dict["throughput_stats"] = throughput_stats
 
-                    print(f"\nThroughput: {throughput_stats}")
-                    print(f"Latency: {latency_stats}")
+                        data_dict["latency_list"] = latency_list
+                        data_dict["throughput_list"] = throughput_list
+                        data_dict["update_counter"] = data_dict.get("update_counter", 0) + 1
 
-                # # Print Statistics every cycle
-                # if data_dict["update_counter"] == self.process_amount:
-                #     data_dict["update_counter"] = 0
-                #     print(f"\nThroughput: {throughput_stats}")
-                #     print(f"Latency: {latency_stats}")
+                        print(f"\nThroughput: {throughput_stats}")
+                        print(f"Latency: {latency_stats}")
 
     def run_stress_process(self):
         """
@@ -100,7 +102,7 @@ class Runner(object):
         shared_dict["throughput_stats"] = Stats()
         shared_lock = manager.Lock()
 
-        with Pool(cpu_count()) as process:
+        with Pool(self.process_amount) as process:
             process.map(self.start_process, [(pid, shared_dict, shared_lock) for pid in range(self.process_amount)])
 
 
@@ -132,7 +134,7 @@ class Stats(object):
         size = len(data_list)
         sorted(data_list)
         index_of_percentile = int(round(size * percentile)) - 1
-        assert 0 <= index_of_percentile <= len(data_list), f"index {index_of_percentile} is out of range of data_list {data_list}"
+        assert 0 <= index_of_percentile < len(data_list), f"index {index_of_percentile} is out of range of data_list {data_list}"
 
         self.percentile = data_list[index_of_percentile]
 
