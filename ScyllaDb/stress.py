@@ -23,7 +23,6 @@ class StressProcess(object):
         parser.add_argument("StressTime", metavar="stress_time", type=int, help="Stress time in seconds")
         args = parser.parse_args()
         stress_time = args.StressTime
-        self.pid = args.PID
 
         if stress_time < 1:
             print("1 is the minimum value for stress_time")
