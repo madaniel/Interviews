@@ -23,12 +23,14 @@ class StressProcess(object):
         parser.add_argument("StressTime", metavar="stress_time", type=int, help="Stress time in seconds")
         args = parser.parse_args()
         stress_time = args.StressTime
+
         if stress_time < 1:
             print("1 is the minimum value for stress_time")
             sys.exit(1)
+
         self.stress_time = stress_time
 
-    def start(self):
+    def start_process(self):
         """
         Start the Stress process
         """
@@ -45,4 +47,4 @@ class StressProcess(object):
 if __name__ == "__main__":
     stress_process = StressProcess()
     stress_process.get_stress_time()
-    stress_process.start()
+    stress_process.start_process()
