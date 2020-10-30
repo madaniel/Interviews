@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from multiprocessing import Process, Manager
 
 # Defines
+PERCENTILE = 0.95
 PROCESS_MIN_SECONDS = 2
 PROCESS_MAX_SECONDS = 2
 THROUGHPUT_INDEX = 1
@@ -60,6 +61,7 @@ class Runner(object):
                 print(f"<debug> throughput={throughput} latency={latency} pid={pid}")
 
                 with lock:
+                    # update stats per process
                     latency_list = data_dict["latency_list"]
                     throughput_list = data_dict["throughput_list"]
                     latency_list.append(latency)
@@ -67,9 +69,9 @@ class Runner(object):
                     data_dict["latency_list"] = latency_list
                     data_dict["throughput_list"] = throughput_list
                     data_dict["update_counter"] = data_dict.get("update_counter", 0) + 1
-                    pass
 
             if data_dict["update_counter"] == self.process_amount:
+                # print stats
                 print("All completed !")
                 data_dict["update_counter"] = 0
 
@@ -96,22 +98,6 @@ class Runner(object):
         print(f"<debug> {str(shared_dict)}")
 
 
-class Report(object):
-
-    """
-    Class for printing summary statistics
-    """
-
-    def __init__(self):
-        self.min = None
-        self.max = None
-        self.average = None
-        self.percentile = None
-
-    def __repr__(self):
-        return f"Average={self.average}, Min={self.min}, Max={self.max}, 95th Percentile={self.percentile}"
-
-
 class Stats(object):
 
     """
@@ -121,17 +107,19 @@ class Stats(object):
     def __init__(self):
         self.min = math.inf
         self.max = -1
+        self.sum = 0
+        self.count = 0
+        self.percentile = None
         self._average = None
 
-    @staticmethod
-    def get_average(data_list: list) -> float:
+    @property
+    def average(self) -> float:
         """
-        Calculates average of values in list
+        Calculates average of values
         """
-        return sum(data_list) / len(data_list)
+        return self.sum / self.count
 
-    @staticmethod
-    def get_percentile(data_list: list, percentile: float) -> int:
+    def _update_percentile(self, data_list: list, percentile: float):
         """
         Calculates percentile of values in list based on float value
         """
@@ -141,21 +129,24 @@ class Stats(object):
         index_of_percentile = int(round(size * percentile)) - 1
         assert 0 < index_of_percentile < len(data_list), f"index {index_of_percentile} is out of range of data_list {data_list}"
 
-        return data_list[index_of_percentile]
+        self.percentile = data_list[index_of_percentile]
 
-    def update_min(self, value):
+    def update_stats(self, new_value: int, data_list: list):
         """
-        Update minimum value
+        Update all statistics values per new value
         """
-        if value < self.min:
-            self.min = value
+        if new_value < self.min:
+            self.min = new_value
 
-    def update_max(self, value):
-        """
-        Update maximum value
-        """
-        if value > self.max:
-            self.max = value
+        if new_value > self.max:
+            self.max = new_value
+
+        self.sum += new_value
+        self.count += 1
+        self._update_percentile(data_list=data_list, percentile=PERCENTILE)
+
+    def __repr__(self):
+        return f"Average={self.average}, Min={self.min}, Max={self.max}, 95th Percentile={self.percentile}"
 
 
 if __name__ == "__main__":
